@@ -1,1 +1,1 @@
-# SkeletonScore v0.1.0
+# SkeletonScore v1.0.0
