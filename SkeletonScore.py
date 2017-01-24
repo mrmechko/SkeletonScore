@@ -18,6 +18,11 @@ TRIPS_NAME="SkeletonScore"
 TRIPS_BASE = os.environ['TRIPS_BASE']
 ONTOLOGY_PATH = os.path.join(TRIPS_BASE, "etc/XMLTrips/lexicon/data")
 GOLD_DATA = os.path.join(TRIPS_BASE, "etc/Data/gold.predmap")
+ALTERNATE_DATA = os.path.join(TRIPS_BASE, "etc/Data/test.predmap")
+
+if os.path.isfile(ALTERNATE_DATA):
+    GOLD_DATA = ALTERNATE_DATA
+
 LIBRARY = library.DEFAULT_LIBRARY
 
 
@@ -117,7 +122,7 @@ class SkeletonScore(TripsModule):
                     error = True
                     self.error_reply(msg, "found {} matching candidates. did not continue".format(len(candidates)))
 
-        elif verb == "evaluate-skeleton": 
+        elif verb == "evaluate-skeleton":
             predicate = content[1].to_string().lower().encode('ascii', 'ignore')
             print(predicate)
             result = self.gold.adjustment_factor(predicate, True, pred_type=self.PRED_TYPE)
