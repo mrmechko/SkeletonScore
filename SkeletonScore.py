@@ -72,8 +72,6 @@ class SkeletonScore(TripsModule):
             reply_content.add("ok")
             GOLD_DATA = content[1].to_string().lower().encode('ascii', 'ignore')
             self.gold = library.load_flatfile(GOLD_DATA, self.ontology, lib_type=LIBRARY)
-            with open("/Users/mechko/Projects/python/simple_exp/note", 'w') as f:
-                f.write(GOLD_DATA)
 
         elif verb == "selection-method":
             global LIBRARY
