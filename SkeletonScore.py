@@ -66,7 +66,8 @@ class SkeletonScore(TripsModule):
             reply_content.add("use-skeleton-data")
             reply_content.add("ok")
             GOLD_DATA = content[1].to_string().lower().encode('ascii', 'ignore')
-            self.gold = library.load_predmap(GOLD_DATA, self.ontology, lib_type=LIBRARY)
+            self.gold = library.load_flatfile(GOLD_DATA, self.ontology, lib_type=LIBRARY)
+            print("loaded file named {}".format(GOLD_DATA))
 
         elif verb == "selection-method":
             global LIBRARY
