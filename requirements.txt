@@ -1,1 +1,1 @@
-git+git://github.com/mrmechko/diesel-python.git
+git+git://github.com/mrmechko/diesel-python.git@a6c7a086fbbeea821d7241c465fe39308703447d
