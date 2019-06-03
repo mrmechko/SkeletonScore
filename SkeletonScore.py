@@ -138,7 +138,7 @@ class SkeletonScore(TripsModule):
             reply_content.add(str_res)
         else:
             error = True
-            self.error_reply(msg, "unknown request verb " + verb)
+            reply_content.add("unknown")
         if not error:
             sender = msg.get_parameter(":sender")
             if sender is not None:
