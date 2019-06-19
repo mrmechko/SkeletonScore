@@ -1,14 +1,22 @@
 #!/usr/bin/python2.7
 
 # This is pretty much a direct translation of Hello.java into Python.
-
+import sys
+print("SkeletonScore: ", sys.version)
 import os
 
 # this should load bioagents if the trips version is less than 3
 # and tripsmodule otherwise
-from bioagents_trips.trips_module import TripsModule
-from bioagents_trips.kqml_performative import KQMLPerformative
-from bioagents_trips.kqml_list import KQMLList
+if sys.version_info < (3, 0):
+    print("loading bioagents")
+    from bioagents_trips.trips_module import TripsModule
+    from bioagents_trips.kqml_performative import KQMLPerformative
+    from bioagents_trips.kqml_list import KQMLList
+else:
+    print("load tripsmodule instead")
+    from tripsmodule.trips_module import TripsModule
+    from tripsmodule.kqml_performative import KQMLPerformative
+    from tripsmodule.kqml_list import KQMLList
 
 import diesel.ontology as ontology
 import diesel.library as library
@@ -51,6 +59,7 @@ class SkeletonScore(TripsModule):
         TripsModule.init(self)
         self.subscribe_to_verb(TRIPS_NAME)
         self.subscribe_to_verb("adjustment-factor")
+        self.subscribe_to_verb("adjustment-factor2")
         self.subscribe_to_verb("score-method")
         self.subscribe_to_verb("selection-method")
         self.subscribe_to_verb("evaluate-skeleton")
@@ -123,7 +132,8 @@ class SkeletonScore(TripsModule):
                     self.error_reply(msg, "found {} matching candidates. did not continue".format(len(candidates)))
 
         elif verb == "evaluate-skeleton":
-            predicate = content[1].to_string().lower().encode('ascii', 'ignore')
+            #predicate = content[1].to_string().encode("ascii", "ignore").lower()
+            predicate = content[1].to_string().lower()
             print(predicate)
             result = self.gold.adjustment_factor(predicate, True, pred_type=self.PRED_TYPE)
             str_res = ":score ({}) :match ({}) :to ({})".format(result[1], str(result[0]), predicate)
