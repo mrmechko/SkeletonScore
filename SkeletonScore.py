@@ -2,7 +2,6 @@
 
 # This is pretty much a direct translation of Hello.java into Python.
 import sys
-print("SkeletonScore: ", sys.version)
 import os
 
 # this should load bioagents if the trips version is less than 3
@@ -67,6 +66,7 @@ class SkeletonScore(TripsModule):
         self.ready()
 
     def receive_request(self, msg, content):
+        print('rec:', msg, content)
         error = False
         if not isinstance(content, KQMLList):
             self.error_reply(msg, "expected :content to be a list")
@@ -134,7 +134,7 @@ class SkeletonScore(TripsModule):
         elif verb == "evaluate-skeleton":
             #predicate = content[1].to_string().encode("ascii", "ignore").lower()
             predicate = content[1].to_string().lower()
-            print(predicate)
+            print(predicate, file=sys.stderr)
             result = self.gold.adjustment_factor(predicate, True, pred_type=self.PRED_TYPE)
             str_res = ":score ({}) :match ({}) :to ({})".format(result[1], str(result[0]), predicate)
 
@@ -146,9 +146,9 @@ class SkeletonScore(TripsModule):
             self.send(broadcast_msg)
 
             reply_content.add(str_res)
-        else:
-            error = True
-            reply_content.add("unknown")
+        #else:
+        #    error = True
+        #    reply_content.add("unknown")
         if not error:
             sender = msg.get_parameter(":sender")
             if sender is not None:
