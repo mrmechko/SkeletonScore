@@ -4,6 +4,8 @@
 import sys
 import os
 
+import json
+
 # this should load bioagents if the trips version is less than 3
 # and tripsmodule otherwise
 if sys.version_info < (3, 0):
@@ -11,11 +13,16 @@ if sys.version_info < (3, 0):
     from bioagents_trips.trips_module import TripsModule
     from bioagents_trips.kqml_performative import KQMLPerformative
     from bioagents_trips.kqml_list import KQMLList
+    def decode_me(s):
+        return s.decode("string_escape").replace(",}", "}")
 else:
     print("load tripsmodule instead")
     from tripsmodule.trips_module import TripsModule
     from tripsmodule.kqml_performative import KQMLPerformative
     from tripsmodule.kqml_list import KQMLList
+    import codecs
+    def decode_me(s):
+        return codecs.escape_decode(s)[0].decode("utf-8").replace("\"\"{", "{").replace("}\"\"", "}").replace(",}", "}").replace("\\\"", "\"")
 
 import diesel.ontology as ontology
 import diesel.library as library
@@ -62,11 +69,12 @@ class SkeletonScore(TripsModule):
         self.subscribe_to_verb("score-method")
         self.subscribe_to_verb("selection-method")
         self.subscribe_to_verb("evaluate-skeleton")
+        self.subscribe_to_verb("wsd-check")
         self.subscribe_to_verb("use-skeleton-data")
         self.ready()
 
     def receive_request(self, msg, content):
-        print('rec:', msg, content)
+        #print('rec:', msg, content)
         error = False
         if not isinstance(content, KQMLList):
             self.error_reply(msg, "expected :content to be a list")
@@ -74,6 +82,7 @@ class SkeletonScore(TripsModule):
         verb = content[0].to_string().lower()
         reply_msg = KQMLPerformative("tell")
         reply_content = KQMLList()
+        print("rec:", verb)
 
         if verb == "use-skeleton-data":
             global GOLD_DATA
@@ -146,6 +155,25 @@ class SkeletonScore(TripsModule):
             self.send(broadcast_msg)
 
             reply_content.add(str_res)
+
+        elif verb == "wsd-check":
+            print(content)
+            root = decode_me(content.get_keyword_arg(":ROOT").to_string().lower()[1:-1])
+            print("|"+root+"|")
+            roles = decode_me(content.get_keyword_arg(":ROLES").to_string().lower()[1:-1])
+            print(json.loads(root))
+            print(roles)
+            print(type(json.loads(roles)))
+            print({x : type(y) for x, y in json.loads(roles).items()})
+            str_res = ":score ({}) :match ({}) :to ({})".format(str(1.0), "NONE", "NONE")
+            broadcast_msg = KQMLPerformative("tell")
+            broadcast_content = KQMLList()
+            broadcast_content.add("skelscore {}".format(str_res))
+            broadcast_msg.set_parameter(":content", broadcast_content)
+            self.send(broadcast_msg)
+
+            reply_content.add(str_res)
+
         #else:
         #    error = True
         #    reply_content.add("unknown")
