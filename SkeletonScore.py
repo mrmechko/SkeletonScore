@@ -33,10 +33,6 @@ else:
     def decode_me(s):
         return codecs.escape_decode(s)[0].decode("utf-8").replace("\"\"{", "{").replace("}\"\"", "}").replace(",}", "}").replace("\\\"", "\"")
 
-import diesel.ontology as ontology
-import diesel.library as library
-import diesel.score as score
-
 TRIPS_NAME="SkeletonScore"
 TRIPS_BASE = os.environ['TRIPS_BASE']
 tmpfilename = os.path.join(TRIPS_BASE, "etc/Data/tmp")
