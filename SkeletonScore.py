@@ -39,28 +39,14 @@ import diesel.score as score
 
 TRIPS_NAME="SkeletonScore"
 TRIPS_BASE = os.environ['TRIPS_BASE']
-ONTOLOGY_PATH = os.path.join(TRIPS_BASE, "etc/XMLTrips/lexicon/data")
-GOLD_DATA = os.path.join(TRIPS_BASE, "etc/Data/gold.predmap")
 tmpfilename = os.path.join(TRIPS_BASE, "etc/Data/tmp")
-ALTERNATE_DATA = os.path.join(TRIPS_BASE, "etc/Data/test.predmap")
-
-if os.path.isfile(ALTERNATE_DATA):
-    GOLD_DATA = ALTERNATE_DATA
-
-LIBRARY = library.DEFAULT_LIBRARY
 
 load_tmp_file = lambda fname: [x for x in json.load(open(fname)) if x['lftype']]
 
 
 SUBSCRIPTIONS = [
-        "adjustment-factor",
-        "adjustment-factor2",
-        "score-method",
-        "selection-method",
-        "evaluate-skeleton",
         "wsd-check",
         "get-wsd-data",
-        "use-skeleton-data"
         ]
 
 class SkeletonScore(TripsModule):
@@ -74,17 +60,10 @@ class SkeletonScore(TripsModule):
 
     def __init__(self, argv):
         self.name = TRIPS_NAME
-        self.ontology = ontology.load_ontology(ONTOLOGY_PATH)
-        self.gold = library.load_predmap(GOLD_DATA, self.ontology, lib_type=LIBRARY)
-        self.PRED_TYPE = score.DEFAULT_PRED_TYPE
-
         TripsModule.__init__(self, argv)
 
     def init(self):
         self.name = TRIPS_NAME
-        self.ontology = ontology.load_ontology(ONTOLOGY_PATH)
-        self.gold = library.load_predmap(GOLD_DATA, self.ontology, lib_type=LIBRARY)
-        self.PRED_TYPE = score.DEFAULT_PRED_TYPE
         TripsModule.init(self)
         self.subscribe_to_verb(TRIPS_NAME)
         for verb in SUBSCRIPTIONS:
@@ -102,79 +81,7 @@ class SkeletonScore(TripsModule):
         reply_content = KQMLList()
         print("rec:", verb)
 
-        if verb == "use-skeleton-data":
-            global GOLD_DATA
-            reply_content.add("use-skeleton-data")
-            reply_content.add("ok")
-            GOLD_DATA = content[1].to_string().lower().encode('ascii', 'ignore')
-            self.gold = library.load_flatfile(GOLD_DATA, self.ontology, lib_type=LIBRARY)
-
-        elif verb == "selection-method":
-            global LIBRARY
-            if content[1].to_string().isdigit():
-                lib_index = int(content[1].to_string())
-                if -1 < lib_index < len(library.LIBRARIES):
-                    LIBRARY = library.LIBRARIES[lib_index]
-                    reply_content.add("selection-method")
-                    reply_content.add(LIBRARY.name())
-                else:
-                    error = True
-                    self.error_reply(msg, "index out of range")
-            else:
-                lib_name = content[1].to_string()
-                candidates = filter(lambda x: x.name() == lib_name, library.LIBRARIES)
-                if len(candidates) == 1:
-                    LIBRARY = candidates[0]
-                    reply_content.add("selection-method")
-                    reply_content.add(LIBRARY.name())
-                else:
-                    error = True
-                    self.error_reply(msg, "found {} matching candidates. did not continue".format(len(candidates)))
-
-        elif verb == "adjustment-factor":
-            reply_content.add("adjustment-factor")
-            reply_content.add("ok")
-            adj_factor = content[1].to_string().lower().encode('ascii', 'ignore')
-            self.gold.adjustment_factor = adj_factor
-
-        elif verb == "score-method":
-            if content[1].to_string().isdigit():
-                pred_index = int(content[1].to_string())
-                if -1 < pred_index < len(score.PREDICATES):
-                    self.PRED_TYPE = score.PREDICATES[pred_index]
-                    reply_content.add("score-method")
-                    reply_content.add(self.PRED_TYPE.name())
-                else:
-                    error = True
-                    self.error_reply(msg, "index out of range")
-            else:
-                pred_name = content[1].to_string()
-                candidates = filter(lambda x: x.name() == pred_name, score.PREDICATES)
-                if len(candidates) == 1:
-                    self.PRED_TYPE = candidates[0]
-                    reply_content.add("score-method")
-                    reply_content.add(self.PRED_TYPE.name())
-                else:
-                    error = True
-                    self.error_reply(msg, "found {} matching candidates. did not continue".format(len(candidates)))
-
-        elif verb == "evaluate-skeleton":
-            #predicate = content[1].to_string().encode("ascii", "ignore").lower()
-            predicate = content[1].to_string().lower()
-            print(predicate, file=sys.stderr)
-            result = self.gold.adjustment_factor(predicate, True, pred_type=self.PRED_TYPE)
-            str_res = ":score ({}) :match ({}) :to ({})".format(result[1], str(result[0]), predicate)
-
-            # Broadcast predicate scores to all other agents just in case
-            broadcast_msg = KQMLPerformative("tell")
-            broadcast_content = KQMLList()
-            broadcast_content.add("skelscore {}".format(str_res))
-            broadcast_msg.set_parameter(":content", broadcast_content)
-            self.send(broadcast_msg)
-
-            reply_content.add(str_res)
-
-        elif verb == "get-wsd-data":
+        if verb == "get-wsd-data":
             print("get-wsd-data")
             res = load_tmp_file(tmpfilename)
             # word, class, start, end
@@ -247,9 +154,6 @@ class SkeletonScore(TripsModule):
 
             reply_content.add(str_res)
 
-        #else:
-        #    error = True
-        #    reply_content.add("unknown")
         if not error:
             # why is the sender being appended to the message?
             #sender = msg.get_parameter(":sender")
