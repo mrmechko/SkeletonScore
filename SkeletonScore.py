@@ -39,10 +39,11 @@ tmpfilename = os.path.join(TRIPS_BASE, "etc/Data/tmp")
 
 load_tmp_file = lambda fname: [x for x in json.load(open(fname)) if x['lftype']]
 
-
 SUBSCRIPTIONS = [
         "wsd-check",
         "get-wsd-data",
+        "paragraph-completed",
+        "new-speech-act-hyps"
         ]
 
 class SkeletonScore(TripsModule):
@@ -66,6 +67,12 @@ class SkeletonScore(TripsModule):
             self.subscribe_to_verb(verb)
         self.ready()
 
+    def receive_tell(self, msg, content):
+        verb = content[0].to_string().lower()
+        if verb in ["paragraph-completed", "new-speach-act-hyps"]:
+            if os.path.isfile(tmpfilename):
+                os.remove(tmpfilename)
+
     def receive_request(self, msg, content):
         #print('rec:', msg, content)
         error = False
@@ -79,7 +86,10 @@ class SkeletonScore(TripsModule):
 
         if verb == "get-wsd-data":
             print("get-wsd-data")
-            res = load_tmp_file(tmpfilename)
+            if os.path.isfile(tmpfilename):
+                res = load_tmp_file(tmpfilename)
+            else:
+                res = []
             # word, class, start, end
             # word =  content.get_keyword_arg(":WORD").to_string().lower()
             # cls =  content.get_keyword_arg(":CLASS").to_string().lower()
