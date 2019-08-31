@@ -6,6 +6,9 @@ import os
 
 import json
 
+def srange(x):
+    return 0.1*x+0.9
+
 def point_intersect(p, s):
     return s[0] <= p and p <= s[1]
 
@@ -37,7 +40,7 @@ TRIPS_NAME="SkeletonScore"
 TRIPS_BASE = os.environ['TRIPS_BASE']
 tmpfilename = os.path.join(TRIPS_BASE, "etc/Data/tmp")
 
-load_tmp_file = lambda fname: [x for x in json.load(open(fname)) if x['lftype']]
+load_tmp_file = lambda fname: [x for x in json.load(open(fname)) if 'lftype' in x or 'senses' in x]
 
 SUBSCRIPTIONS = [
         "wsd-check",
@@ -90,26 +93,37 @@ class SkeletonScore(TripsModule):
                 res = load_tmp_file(tmpfilename)
             else:
                 res = []
-            # word, class, start, end
-            # word =  content.get_keyword_arg(":WORD").to_string().lower()
-            # cls =  content.get_keyword_arg(":CLASS").to_string().lower()
-            # start =  content.get_keyword_arg(":START").to_string()
-            # end =  content.get_keyword_arg(":END").to_string()
+            # Currently, expecting something like
+            # {"lftype": "ont::something", "lex": "w::something", "start": 1, "end": 2, "score": 1}
             data = KQMLList()
             data.add("add-wsd-data")
 
             for r in res:
-                if not r['lftype']:
-                    continue
-                lftype = r['lftype'][0]
-                d = KQMLList()
-                span = KQMLList()
-                d.add(lftype)
-                d.add("w::"+r['lex'])
-                span.add(int(r['start']))
-                span.add(int(r['end']))
-                d.add(span)
-                data.add(d)
+                if 'senses' in r:
+                    r["senses"] = dict(r.get("senses", {}))
+                    for sense, score in r["senses"].items():
+                        d = KQMLList()
+                        span = KQMLList()
+                        d.add(sense)
+                        d.add("w::"+r['lex'])
+                        span.add(int(r['start']))
+                        span.add(int(r['end']))
+                        d.add(span)
+                        d.add(":WSD")
+                        d.add(srange(score))
+                        data.add(d)
+                elif 'lftype' in r and r['lftype']:
+                    lftype = r['lftype'][0]
+                    d = KQMLList()
+                    span = KQMLList()
+                    d.add(lftype)
+                    d.add("w::"+r['lex'])
+                    span.add(int(r['start']))
+                    span.add(int(r['end']))
+                    d.add(span)
+                    d.add(":WSD")
+                    d.add(float(r.get("score", 1)))
+                    data.add(d)
             broadcast_msg = KQMLPerformative("tell")
             broadcast_msg.set_parameter(":content", data)
             #this is duplicating things
